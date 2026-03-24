@@ -1,0 +1,11 @@
+[project]
+name = "Standard_Library"
+version = "0.0.1"
+description = "Standard library to be used in multiple projects."
+requires-python = ">=3.12"
+authors = [{name="HS Wee"}]
+dependencies = ["pandas"]
+
+[build-system]
+requires = ["setuptools"]
+build-backend = "setuptools.build_meta"
