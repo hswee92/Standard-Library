@@ -19,7 +19,7 @@ def get_current_dir() -> Path:
     if getattr(sys, "frozen", False):
         current_dir = Path(sys.executable).parent  # next to the .exe
     else:
-        current_dir = Path(__file__).resolve().parent  # normal script run
+        current_dir = Path(sys.argv[0]).resolve().parent  # normal script run
     print(f"Current working directory: \"{current_dir}\".")
     return current_dir
 
