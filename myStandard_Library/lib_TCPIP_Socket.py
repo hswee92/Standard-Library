@@ -20,7 +20,7 @@ import socket
 import threading
 import subprocess
 import json
-from lib_ContextLogger import ContextLogger
+from myStandard_Library.lib_ContextLogger import ContextLogger
 
 __version__ = "2.0.0"
 

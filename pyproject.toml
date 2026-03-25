@@ -1,6 +1,6 @@
 [project]
 name = "myStandard_Library"
-version = "0.0.1"
+version = "0.0.2"
 description = "Standard library to be used in multiple projects."
 requires-python = ">=3.10"
 authors = [{name="HS Wee"}]
