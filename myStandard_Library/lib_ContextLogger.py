@@ -18,6 +18,7 @@ from logging.handlers import RotatingFileHandler
 from datetime import datetime, date, timedelta
 from typing import Optional
 import threading
+import queue
 
 __version__ = "2.0.0"
 
@@ -206,6 +207,11 @@ class ContextLogger:
         console_handler.setFormatter(console_formatter)
         self.logger.addHandler(console_handler)
 
+        # Setup GUI Queue Handler
+        gui_queue = queue.Queue(maxsize=1000)
+        guihandler = GUIQueueHandler(gui_queue)
+
+
         # Current date for file naming
         self._current_date: date = datetime.now().date()
 
@@ -357,6 +363,49 @@ class ContextLogger:
                     self.logger.warning(f"Skipped (locked): {fname}", extra={"context": "Purge"})
                 except Exception as e:
                     self.logger.warning(f"Failed to delete {fname}: {e}", extra={"context": "Purge"})
+
+
+    # -----------------------------------------------------------------------------------
+    # GUI Handler Management
+    # -----------------------------------------------------------------------------------
+    def add_gui_handler(self, gui_queue, handler_name: str = "gui"):
+        """
+        Attach a GUI queue handler to this logger.
+        Safe to call multiple times with the same handler_name.
+        """
+        attr_name = f"_handler_{handler_name}"
+
+        old_handler = getattr(self, attr_name, None)
+        if old_handler is not None:
+            return old_handler
+
+        handler = GUIQueueHandler(gui_queue)
+        handler.setLevel(logging.DEBUG)
+        handler.setFormatter(LibFileHandlerFormatter(include_context=True))
+
+        self.logger.addHandler(handler)
+        setattr(self, attr_name, handler)
+        return handler
+
+
+    def remove_gui_handler(self, handler_name: str = "gui"):
+        """
+        Detach a GUI queue handler from this logger.
+        """
+        attr_name = f"_handler_{handler_name}"
+        handler = getattr(self, attr_name, None)
+
+        if handler is None:
+            return
+
+        try:
+            self.logger.removeHandler(handler)
+        finally:
+            try:
+                handler.close()
+            except Exception:
+                pass
+            setattr(self, attr_name, None)
 
 
     # -----------------------------------------------------------------------------------
@@ -578,43 +627,69 @@ def get_logger(name: str, log_dir: str = "logs",
     return logger
 
 
+# check if logger has GUI handler
+def has_gui_handler(self, handler_name: str = "gui") -> bool:
+    return getattr(self, f"_handler_{handler_name}", None) is not None
+
+
+# -----------------------------------------------------------------------------------
+# GUI Queue Handler (Optional)
+# -----------------------------------------------------------------------------------
+class GUIQueueHandler(logging.Handler):
+    def __init__(self, gui_queue: queue.Queue):
+        super().__init__()
+        self.gui_queue = gui_queue
+
+    def emit(self, record: logging.LogRecord) -> None:
+        msg = self.format(record)
+        if self.gui_queue.full():
+            try:
+                self.gui_queue.get_nowait()
+            except Exception:
+                pass
+
+        self.gui_queue.put_nowait(msg)
+
+
+
+
 
 # -----------------------------------------------------------------------------------
 # Legacy Function - Backward Compatibility
 # -----------------------------------------------------------------------------------
 
-# Logs data to a file separated by date.
-def log_data(log_text:str, folder_path:str=os.getcwd(), log_level:str="INFO", context:str="Main") -> None:
-    """
-    Append a timestamped log line to a date-based file.
+# # Logs data to a file separated by date.
+# def log_data(log_text:str, folder_path:str=os.getcwd(), log_level:str="INFO", context:str="Main") -> None:
+#     """
+#     Append a timestamped log line to a date-based file.
 
-    Args:
-        log_text (str): Text to log.
-        folder_path (str): Directory to write log files.
-        log_level (str): Log level label to store.
-        context (str): Context label to attach.
+#     Args:
+#         log_text (str): Text to log.
+#         folder_path (str): Directory to write log files.
+#         log_level (str): Log level label to store.
+#         context (str): Context label to attach.
 
-    Returns: None
-    """
+#     Returns: None
+#     """
 
-    # Ensure the folder exists
-    os.makedirs(folder_path, exist_ok=True)
+#     # Ensure the folder exists
+#     os.makedirs(folder_path, exist_ok=True)
     
-    # Generate log file name based on current date
-    date_str = datetime.now().strftime("%Y%m%d")
-    log_filename = f"log_{date_str}.log"
-    log_filepath = os.path.join(folder_path, log_filename)
+#     # Generate log file name based on current date
+#     date_str = datetime.now().strftime("%Y%m%d")
+#     log_filename = f"log_{date_str}.log"
+#     log_filepath = os.path.join(folder_path, log_filename)
     
-    # Prepare log entry with timestamp
-    timestamp = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
-    entry = f"{timestamp} [{log_level}] [{context}]: {log_text}\n"
+#     # Prepare log entry with timestamp
+#     timestamp = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+#     entry = f"{timestamp} [{log_level}] [{context}]: {log_text}\n"
     
-    # Check if file exists, create if not
-    if not os.path.exists(log_filepath):
-        with open(log_filepath, "w") as f:
-            f.write(entry)
-    else:
-        with open(log_filepath, "a") as f:
-            f.write(entry)
+#     # Check if file exists, create if not
+#     if not os.path.exists(log_filepath):
+#         with open(log_filepath, "w") as f:
+#             f.write(entry)
+#     else:
+#         with open(log_filepath, "a") as f:
+#             f.write(entry)
 
          
