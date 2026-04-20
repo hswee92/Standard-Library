@@ -5,6 +5,9 @@ Purpose:
     Provide context-aware logging utilities with rotation and retention.
 
 Changelog: 
+- 3.0.0: 
+    - Added GUI handling capability.
+    - Queue log to enable GUI widget to consume.
 - 2.0.0: 
     - Added method debug2, info2, warning2, error2, critical2. 
     - Added size and daily rotation modes.
