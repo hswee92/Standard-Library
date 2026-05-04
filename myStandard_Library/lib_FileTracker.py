@@ -197,8 +197,9 @@ class FileTracker:
 # -----------------------------------------------------------------------------------
 # need FOLDER_CLEANING_LIST and FOLDER_CLEANING_FREQUENCY in config.yaml
 class FolderCleaning:
-    def __init__(self, logger: ContextLogger, 
+    def __init__(self, 
                  root_dir: Path, 
+                 logger: ContextLogger, 
                  exclude_root_folder: bool = True,
                  shelf_life_days: int = 30,
                  machine_label: str | None = None):
@@ -279,7 +280,7 @@ class FolderCleaning:
         self._cleaning_tracker = self.get_current_cleaning_value()
     
 
-    def main_cleaning_process(self) -> None: 
+    def folder_cleaning_main_process(self) -> None: 
         if self.check_cleaning_needed(): 
             self.delete_old_files()
 
